@@ -238,7 +238,6 @@ class PaginaContador extends StatelessWidget {
   }
 }
 
-// Página Lista desde JSON local
 class PaginaLista extends StatelessWidget {
   PaginaLista({super.key});
 
@@ -268,7 +267,6 @@ class PaginaLista extends StatelessWidget {
   }
 }
 
-// Página Card personalizado
 class PaginaCard extends StatelessWidget {
   const PaginaCard({super.key});
 
@@ -306,7 +304,6 @@ class PaginaCard extends StatelessWidget {
   }
 }
 
-// Página Grid de imágenes
 class PaginaGrid extends StatelessWidget {
   PaginaGrid({super.key});
 

@@ -14,7 +14,7 @@ class MiAppContador extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'PRUEBA CONTADOR',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 249, 12, 253)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       home: const mScreen(title: 'CONTADOR PRUEBA'),
@@ -105,7 +105,7 @@ class _mScreenState extends State<mScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 249, 12, 253),
+                color: Colors.blue,
               ),
               child: Text(
                 'Menú',
@@ -168,14 +168,14 @@ class _mScreenState extends State<mScreen> {
                 FloatingActionButton(
                   onPressed: _resContador,
                   tooltip: 'Decrementar',
-                  backgroundColor: _c == 0 ? Colors.grey : const Color.fromARGB(255, 249, 12, 253),
+                  backgroundColor: _c == 0 ? Colors.grey : Colors.blue,
                   child: const Icon(Icons.remove),
                 ),
                 const SizedBox(height: 10),
                 FloatingActionButton(
                   onPressed: _resetContador,
                   tooltip: 'Reiniciar',
-                  backgroundColor: const Color.fromARGB(255, 255, 51, 0),
+                  backgroundColor: Colors.blue,
                   child: const Icon(Icons.refresh),
                 ),
               ],
@@ -201,7 +201,7 @@ class _mScreenState extends State<mScreen> {
           ),
         ],
         currentIndex: _i,
-        selectedItemColor: const Color.fromARGB(255, 249, 12, 253),
+        selectedItemColor: Colors.blue,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),
@@ -221,7 +221,7 @@ class PaginaContador extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           const Text(
-            'Diana',
+            'Erick',
             style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -244,9 +244,9 @@ class PaginaLista extends StatelessWidget {
 
   final String jsonData = '''
     [
-      {"nombre": "PRUEBA 1", "descripcion": "Descripción 1"},
-      {"nombre": "PRUEBA 2", "descripcion": "Descripción 2"},
-      {"nombre": "PRUEBA 3", "descripcion": "Descripción 3"}
+      {"nombre": "Elemento 1", "descripcion": "Descripción de elemento 1"},
+      {"nombre": "Elemento 2", "descripcion": "Descripción de elemento 2"},
+      {"nombre": "Elemento 3", "descripcion": "Descripción de elemento 3"}
     ]
   ''';
 
@@ -286,15 +286,15 @@ class PaginaCard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(Icons.person, size: 60, color: const Color.fromARGB(255, 249, 12, 253)),
+                Icon(Icons.person, size: 60, color: Colors.blue),
                 SizedBox(height: 16),
                 Text(
-                  'Diana Chiapa Soto',
+                  'Erick Ricardo',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Prueba de descripción',
+                  'Desarrollador de software',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               ],

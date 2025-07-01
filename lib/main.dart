@@ -1,12 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 void main() {
   runApp(const MiAppContador());
 }
 
-class MiAppContador extends StatelessWidget {
+class MiAppContador extends StatefulWidget {
   const MiAppContador({super.key});
+
+  @override
+  State<MiAppContador> createState() => _MiAppContadorState();
+}
+
+class _MiAppContadorState extends State<MiAppContador> {
+  bool _isDarkMode = false;
+  double _fontSize = 16.0;
+  Color _primaryColor = Colors.blue;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  _loadPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      _fontSize = prefs.getDouble('fontSize') ?? 16.0;
+      int colorValue = prefs.getInt('primaryColor') ?? Colors.blue.value;
+      _primaryColor = Color(colorValue);
+    });
+  }
+
+  _savePreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', _isDarkMode);
+    await prefs.setDouble('fontSize', _fontSize);
+    await prefs.setInt('primaryColor', _primaryColor.value);
+  }
+
+  void updateTheme(bool isDark) {
+    setState(() {
+      _isDarkMode = isDark;
+    });
+    _savePreferences();
+  }
+
+  void updateFontSize(double size) {
+    setState(() {
+      _fontSize = size;
+    });
+    _savePreferences();
+  }
+
+  void updatePrimaryColor(Color color) {
+    setState(() {
+      _primaryColor = color;
+    });
+    _savePreferences();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,18 +68,47 @@ class MiAppContador extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'PRUEBA CONTADOR',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _primaryColor,
+          brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+        ),
         useMaterial3: true,
+        textTheme: Theme.of(context).textTheme.apply(
+          fontSizeFactor: _fontSize / 16.0,
+        ),
       ),
-      home: const mScreen(title: 'CONTADOR PRUEBA'),
+      home: mScreen(
+        title: 'CONTADOR PRUEBA',
+        onThemeChanged: updateTheme,
+        onFontSizeChanged: updateFontSize,
+        onColorChanged: updatePrimaryColor,
+        isDarkMode: _isDarkMode,
+        fontSize: _fontSize,
+        primaryColor: _primaryColor,
+      ),
     );
   }
 }
 
 class mScreen extends StatefulWidget {
-  const mScreen({super.key, required this.title});
+  const mScreen({
+    super.key,
+    required this.title,
+    required this.onThemeChanged,
+    required this.onFontSizeChanged,
+    required this.onColorChanged,
+    required this.isDarkMode,
+    required this.fontSize,
+    required this.primaryColor,
+  });
 
   final String title;
+  final Function(bool) onThemeChanged;
+  final Function(double) onFontSizeChanged;
+  final Function(Color) onColorChanged;
+  final bool isDarkMode;
+  final double fontSize;
+  final Color primaryColor;
 
   @override
   State<mScreen> createState() => _mScreenState();
@@ -34,6 +117,41 @@ class mScreen extends StatefulWidget {
 class _mScreenState extends State<mScreen> {
   int _c = 0;
   int _i = 0;
+  String _userName = '';
+  String _userEmail = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _loadCounterValue();
+  }
+
+  _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('userName') ?? '';
+      _userEmail = prefs.getString('userEmail') ?? '';
+    });
+  }
+
+  _saveUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', _userName);
+    await prefs.setString('userEmail', _userEmail);
+  }
+
+  _loadCounterValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _c = prefs.getInt('counterValue') ?? 0;
+    });
+  }
+
+  _saveCounterValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('counterValue', _c);
+  }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -54,6 +172,7 @@ class _mScreenState extends State<mScreen> {
       setState(() {
         _c++;
       });
+      _saveCounterValue();
       if (_c == 20) {
         _showSnackBar('Se alcanzó el valor máximo (20)');
       }
@@ -67,6 +186,7 @@ class _mScreenState extends State<mScreen> {
       setState(() {
         _c--;
       });
+      _saveCounterValue();
     } else {
       _showSnackBar('No se permiten números negativos');
     }
@@ -76,6 +196,7 @@ class _mScreenState extends State<mScreen> {
     setState(() {
       _c = 0;
     });
+    _saveCounterValue();
     _showSnackBar('Contador reiniciado');
   }
 
@@ -85,34 +206,117 @@ class _mScreenState extends State<mScreen> {
     });
   }
 
+  void _showUserDataDialog() {
+    TextEditingController nameController = TextEditingController(text: _userName);
+    TextEditingController emailController = TextEditingController(text: _userEmail);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Datos de Usuario'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _userName = nameController.text;
+                  _userEmail = emailController.text;
+                });
+                _saveUserData();
+                Navigator.of(context).pop();
+                _showSnackBar('Datos guardados correctamente');
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> _paginas = <Widget>[
-      PaginaContador(contador: _c),
+      PaginaContador(contador: _c, userName: _userName),
       PaginaLista(),
-      const PaginaCard(),
+      PaginaCard(userName: _userName, userEmail: _userEmail),
       PaginaGrid(),
+      PaginaConfiguracion(
+        onThemeChanged: widget.onThemeChanged,
+        onFontSizeChanged: widget.onFontSizeChanged,
+        onColorChanged: widget.onColorChanged,
+        isDarkMode: widget.isDarkMode,
+        fontSize: widget.fontSize,
+        primaryColor: widget.primaryColor,
+      ),
     ];
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: _showUserDataDialog,
+            tooltip: 'Datos de Usuario',
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
+            DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: widget.primaryColor,
               ),
-              child: Text(
-                'Menú',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Menú',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (_userName.isNotEmpty)
+                    Text(
+                      'Hola, $_userName',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                ],
               ),
             ),
             ListTile(
@@ -151,10 +355,35 @@ class _mScreenState extends State<mScreen> {
                 Navigator.pop(context);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Configuración'),
+              selected: _i == 4,
+              onTap: () {
+                _onItemTapped(4);
+                Navigator.pop(context);
+              },
+            ),
           ],
         ),
       ),
-      body: _paginas[_i],
+      body: Column(
+        children: [
+          Expanded(child: _paginas[_i]),
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              _userName.isNotEmpty ? 'Desarrollado por $_userName' : 'Desarrollado por Usuario',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.grey[400] 
+                    : Colors.grey[600],
+              ),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: _i == 0
           ? Column(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -168,14 +397,14 @@ class _mScreenState extends State<mScreen> {
                 FloatingActionButton(
                   onPressed: _resContador,
                   tooltip: 'Decrementar',
-                  backgroundColor: _c == 0 ? Colors.grey : Colors.blue,
+                  backgroundColor: _c == 0 ? Colors.grey : widget.primaryColor,
                   child: const Icon(Icons.remove),
                 ),
                 const SizedBox(height: 10),
                 FloatingActionButton(
                   onPressed: _resetContador,
                   tooltip: 'Reiniciar',
-                  backgroundColor: Colors.blue,
+                  backgroundColor: widget.primaryColor,
                   child: const Icon(Icons.refresh),
                 ),
               ],
@@ -199,9 +428,13 @@ class _mScreenState extends State<mScreen> {
             icon: Icon(Icons.grid_on),
             label: 'Grid',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Config',
+          ),
         ],
         currentIndex: _i,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: widget.primaryColor,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),
@@ -211,8 +444,9 @@ class _mScreenState extends State<mScreen> {
 
 class PaginaContador extends StatelessWidget {
   final int contador;
+  final String userName;
 
-  const PaginaContador({super.key, required this.contador});
+  const PaginaContador({super.key, required this.contador, required this.userName});
 
   @override
   Widget build(BuildContext context) {
@@ -220,9 +454,15 @@ class PaginaContador extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const Text(
-            'Erick',
-            style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+          Text(
+            userName.isNotEmpty ? userName : 'Erick',
+            style: TextStyle(
+              fontSize: 48, 
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.white 
+                  : Colors.black,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -230,6 +470,9 @@ class PaginaContador extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontSize: 60,
                   fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : Colors.black,
                 ),
           ),
         ],
@@ -245,7 +488,9 @@ class PaginaLista extends StatelessWidget {
     [
       {"nombre": "Elemento 1", "descripcion": "Descripción de elemento 1"},
       {"nombre": "Elemento 2", "descripcion": "Descripción de elemento 2"},
-      {"nombre": "Elemento 3", "descripcion": "Descripción de elemento 3"}
+      {"nombre": "Elemento 3", "descripcion": "Descripción de elemento 3"},
+      {"nombre": "Elemento 4", "descripcion": "Descripción de elemento 4"},
+      {"nombre": "Elemento 5", "descripcion": "Descripción de elemento 5"}
     ]
   ''';
 
@@ -268,7 +513,10 @@ class PaginaLista extends StatelessWidget {
 }
 
 class PaginaCard extends StatelessWidget {
-  const PaginaCard({super.key});
+  final String userName;
+  final String userEmail;
+
+  const PaginaCard({super.key, required this.userName, required this.userEmail});
 
   @override
   Widget build(BuildContext context) {
@@ -278,23 +526,46 @@ class PaginaCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: SizedBox(
           width: 320,
-          height: 200,
+          height: 250,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.person, size: 60, color: Colors.blue),
-                SizedBox(height: 16),
+              children: [
+                const Icon(Icons.person, size: 60, color: Colors.blue),
+                const SizedBox(height: 16),
                 Text(
-                  'Erick Ricardo',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  userName.isNotEmpty ? userName : 'Erick Ricardo',
+                  style: TextStyle(
+                    fontSize: 24, 
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black,
+                  ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Desarrollador de software',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  userEmail.isNotEmpty ? userEmail : 'Desarrollador de software',
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
+                const SizedBox(height: 16),
+                if (userName.isNotEmpty && userEmail.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const                     Text(
+                      'Datos guardados',
+                      style: TextStyle(
+                        color: Colors.green, 
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -359,6 +630,163 @@ class PaginaGrid extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class PaginaConfiguracion extends StatelessWidget {
+  final Function(bool) onThemeChanged;
+  final Function(double) onFontSizeChanged;
+  final Function(Color) onColorChanged;
+  final bool isDarkMode;
+  final double fontSize;
+  final Color primaryColor;
+
+  const PaginaConfiguracion({
+    super.key,
+    required this.onThemeChanged,
+    required this.onFontSizeChanged,
+    required this.onColorChanged,
+    required this.isDarkMode,
+    required this.fontSize,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Color> availableColors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.purple,
+      Colors.orange,
+      Colors.teal,
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tema',
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Modo oscuro'),
+                  subtitle: const Text('Cambiar entre tema claro y oscuro'),
+                  value: isDarkMode,
+                  onChanged: onThemeChanged,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tamaño de fuente',
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text('Tamaño actual: ${fontSize.toInt()}px',
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.grey[300] 
+                        : Colors.grey[700],
+                  ),
+                ),
+                Slider(
+                  value: fontSize,
+                  min: 12.0,
+                  max: 24.0,
+                  divisions: 6,
+                  label: fontSize.toInt().toString(),
+                  onChanged: onFontSizeChanged,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Color principal',
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  children: availableColors.map((color) {
+                    return GestureDetector(
+                      onTap: () => onColorChanged(color),
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(25),
+                          border: primaryColor == color
+                              ? Border.all(
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.white 
+                                      : Colors.black54, 
+                                  width: 3
+                                )
+                              : null,
+                        ),
+                        child: primaryColor == color
+                            ? Icon(
+                                Icons.check, 
+                                color: Theme.of(context).brightness == Brightness.dark 
+                                    ? Colors.white 
+                                    : Colors.white
+                              )
+                            : null,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+      ],
     );
   }
 }

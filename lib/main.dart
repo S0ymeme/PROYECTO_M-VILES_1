@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 
 void main() {
@@ -481,34 +482,149 @@ class PaginaContador extends StatelessWidget {
   }
 }
 
-class PaginaLista extends StatelessWidget {
-  PaginaLista({super.key});
+// CLASE MODIFICADA - Ahora carga datos desde archivo JSON
+class PaginaLista extends StatefulWidget {
+  const PaginaLista({super.key});
 
-  final String jsonData = '''
-    [
-      {"nombre": "Elemento 1", "descripcion": "Descripción de elemento 1"},
-      {"nombre": "Elemento 2", "descripcion": "Descripción de elemento 2"},
-      {"nombre": "Elemento 3", "descripcion": "Descripción de elemento 3"},
-      {"nombre": "Elemento 4", "descripcion": "Descripción de elemento 4"},
-      {"nombre": "Elemento 5", "descripcion": "Descripción de elemento 5"}
-    ]
-  ''';
+  @override
+  State<PaginaLista> createState() => _PaginaListaState();
+}
+
+class _PaginaListaState extends State<PaginaLista> {
+  List<dynamic> items = [];
+  bool isLoading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJsonData();
+  }
+
+  Future<void> _loadJsonData() async {
+    try {
+      // Cargar el archivo JSON desde assets
+      final String jsonString = await rootBundle.loadString('assets/data/elementos.json');
+      final List<dynamic> jsonData = json.decode(jsonString);
+      
+      setState(() {
+        items = jsonData;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        error = 'Error al cargar los datos: $e';
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<dynamic> items = json.decode(jsonData);
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return ListTile(
-          leading: const Icon(Icons.label),
-          title: Text(item['nombre']),
-          subtitle: Text(item['descripcion']),
-        );
-      },
+    if (error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              error!,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.red[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                  error = null;
+                });
+                _loadJsonData();
+              },
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (items.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay elementos disponibles',
+          style: TextStyle(fontSize: 16),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadJsonData,
+      child: ListView.builder(
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Theme.of(context).primaryColor,
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              title: Text(
+                item['nombre'] ?? 'Sin nombre',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text(item['descripcion'] ?? 'Sin descripción'),
+              trailing: item['icono'] != null 
+                  ? Icon(
+                      _getIconData(item['icono']),
+                      color: Theme.of(context).primaryColor,
+                    )
+                  : const Icon(Icons.label_outline),
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'star':
+        return Icons.star;
+      case 'favorite':
+        return Icons.favorite;
+      case 'home':
+        return Icons.home;
+      case 'work':
+        return Icons.work;
+      case 'school':
+        return Icons.school;
+      case 'shopping':
+        return Icons.shopping_cart;
+      default:
+        return Icons.label;
+    }
   }
 }
 
@@ -557,7 +673,7 @@ class PaginaCard extends StatelessWidget {
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const                     Text(
+                    child: const Text(
                       'Datos guardados',
                       style: TextStyle(
                         color: Colors.green, 
@@ -785,7 +901,6 @@ class PaginaConfiguracion extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-
       ],
     );
   }

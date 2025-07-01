@@ -1,0 +1,42 @@
+[
+  {
+    "nombre": "Tareas Pendientes",
+    "descripcion": "Lista de actividades por completar",
+    "icono": "work"
+  },
+  {
+    "nombre": "Recordatorios",
+    "descripcion": "Eventos importantes que no debes olvidar",
+    "icono": "star"
+  },
+  {
+    "nombre": "Proyectos Personales",
+    "descripcion": "Ideas y proyectos en desarrollo",
+    "icono": "home"
+  },
+  {
+    "nombre": "Lista de Compras",
+    "descripcion": "Productos que necesitas adquirir",
+    "icono": "shopping"
+  },
+  {
+    "nombre": "Objetivos de Estudio",
+    "descripcion": "Metas académicas y de aprendizaje",
+    "icono": "school"
+  },
+  {
+    "nombre": "Favoritos",
+    "descripcion": "Elementos marcados como importantes",
+    "icono": "favorite"
+  },
+  {
+    "nombre": "Configuraciones",
+    "descripcion": "Ajustes y preferencias del sistema",
+    "icono": "star"
+  },
+  {
+    "nombre": "Contactos Importantes",
+    "descripcion": "Personas de contacto frecuente",
+    "icono": "favorite"
+  }
+]

@@ -482,7 +482,6 @@ class PaginaContador extends StatelessWidget {
   }
 }
 
-// CLASE MODIFICADA - Ahora carga datos desde archivo JSON
 class PaginaLista extends StatefulWidget {
   const PaginaLista({super.key});
 
@@ -503,7 +502,6 @@ class _PaginaListaState extends State<PaginaLista> {
 
   Future<void> _loadJsonData() async {
     try {
-      // Cargar el archivo JSON desde assets
       final String jsonString = await rootBundle.loadString('assets/data/elementos.json');
       final List<dynamic> jsonData = json.decode(jsonString);
       
